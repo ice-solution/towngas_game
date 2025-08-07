@@ -34,7 +34,7 @@ class MainScene extends Phaser.Scene {
 
     // 綠色圓形「開始」按鈕
     this.startBtnBg = this.add.graphics();
-    const btnRadius = 80;
+    const btnRadius = 120;
     this.startBtnBg.fillStyle(0xb6e86b, 1);
     this.startBtnBg.fillCircle(this.centerX, this.scale.height - 150, btnRadius);
     this.startBtnBg.setInteractive(new Phaser.Geom.Circle(this.centerX, this.scale.height - 150, btnRadius), Phaser.Geom.Circle.Contains);
@@ -45,7 +45,7 @@ class MainScene extends Phaser.Scene {
     this.startBtnBg.setDepth(1);
 
     this.startBtn = this.add.text(this.centerX, this.scale.height - 150, '開始', {
-      fontSize: '36px', color: '#fff', fontFamily: 'Noto Sans TC', fontStyle: 'bold'
+      fontSize: '48px', color: '#fff', fontFamily: 'Noto Sans TC', fontStyle: 'bold'
     }).setOrigin(0.5).setDepth(2);
     this.startBtn.setInteractive({ useHandCursor: true });
     this.startBtn.on('pointerdown', () => {
@@ -86,7 +86,7 @@ class MainScene extends Phaser.Scene {
     this.stopBtnBg.setDepth(1).setVisible(false);
 
     this.stopBtn = this.add.text(this.centerX, this.scale.height - 150, '停止', {
-      fontSize: '36px', color: '#fff', fontFamily: 'Noto Sans TC', fontStyle: 'bold'
+      fontSize: '48px', color: '#fff', fontFamily: 'Noto Sans TC', fontStyle: 'bold'
     }).setOrigin(0.5).setInteractive().setVisible(false).setDepth(2);
     this.stopBtn.on('pointerdown', () => this.stopGame());
 
@@ -201,6 +201,7 @@ class MainScene extends Phaser.Scene {
     // 隱藏開始畫面
     this.startBtn.setVisible(false);
     this.startBtnBg.setVisible(false);
+    this.startBtn.setInteractive(false); // 禁用按鈕互動
     // 顯示倒數
     this.countdownText.setVisible(true);
     this.infoText.setVisible(false);
@@ -304,8 +305,23 @@ class MainScene extends Phaser.Scene {
     const displayTime = Math.floor(this.elapsed * 10);
     this.infoText.setVisible(false);
     this.resultText.setText(displayTime.toString()).setVisible(true);
-    this.startBtn.setText('返回首頁').setVisible(true);
+    
+    // 將圓形按鈕改為長方形返回按鈕
+    this.startBtnBg.clear();
+    const returnBtnW = 240, returnBtnH = 80, returnBtnR = 40;
+    const returnBtnY = this.scale.height - 150;
+    this.startBtnBg.fillStyle(0xb6e86b, 1);
+    this.startBtnBg.fillRoundedRect(this.centerX - returnBtnW/2, returnBtnY, returnBtnW, returnBtnH, returnBtnR);
+    this.startBtnBg.setInteractive(new Phaser.Geom.Rectangle(this.centerX - returnBtnW/2, returnBtnY, returnBtnW, returnBtnH), Phaser.Geom.Rectangle.Contains);
     this.startBtnBg.setVisible(true);
+    
+    // 重新設置按鈕文字位置和互動
+    this.startBtn.setText('返回').setVisible(true);
+    this.startBtn.setPosition(this.centerX, returnBtnY + returnBtnH/2);
+    this.startBtn.setColor('#fff');
+    this.startBtn.setInteractive({ useHandCursor: true });
+    this.startBtn.off('pointerdown'); // 先移除舊的事件監聽器
+    this.startBtn.on('pointerdown', () => this.resetToHome());
     this.sound.play('clap'); // 播放拍手聲效
     this.launchConfetti();
     this.state = 'finished'; // 改為 'finished' 而不是 'idle'
@@ -324,8 +340,26 @@ class MainScene extends Phaser.Scene {
   resetToHome() {
     console.log('=== resetToHome 被調用 ===');
     console.log('調用前狀態:', this.state);
-    this.startBtn.setText('開始').setVisible(true);
+    
+    // 恢復圓形開始按鈕
+    this.startBtnBg.clear();
+    this.startBtnBg.fillStyle(0xb6e86b, 1);
+    const btnRadius = 120; // 定義按鈕半徑
+    this.startBtnBg.fillCircle(this.centerX, this.scale.height - 150, btnRadius);
+    this.startBtnBg.setInteractive(new Phaser.Geom.Circle(this.centerX, this.scale.height - 150, btnRadius), Phaser.Geom.Circle.Contains);
     this.startBtnBg.setVisible(true);
+    
+    this.startBtn.setText('開始').setVisible(true);
+    this.startBtn.setPosition(this.centerX, this.scale.height - 150);
+    this.startBtn.setColor('#fff');
+    this.startBtn.setInteractive({ useHandCursor: true });
+    // 重新綁定按鈕事件
+    this.startBtn.off('pointerdown'); // 先移除舊的事件監聽器
+    this.startBtn.on('pointerdown', () => {
+      if (this.state === 'idle') this.startCountdown();
+      else this.resetToHome();
+    });
+    
     this.infoText.setVisible(false);
     this.resultText.setVisible(false);
     this.stopConfetti(); // 停止彩帶動畫
