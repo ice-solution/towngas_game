@@ -36,15 +36,15 @@ class MainScene extends Phaser.Scene {
     this.startBtnBg = this.add.graphics();
     const btnW = 160, btnH = 64, btnR = 32;
     this.startBtnBg.fillStyle(0xb6e86b, 1);
-    this.startBtnBg.fillRoundedRect(this.centerX - btnW/2, this.centerY + 50, btnW, btnH, btnR);
-    this.startBtnBg.setInteractive(new Phaser.Geom.Rectangle(this.centerX - btnW/2, this.centerY + 50, btnW, btnH), Phaser.Geom.Rectangle.Contains);
+    this.startBtnBg.fillRoundedRect(this.centerX - btnW/2, this.centerY + 130, btnW, btnH, btnR);
+    this.startBtnBg.setInteractive(new Phaser.Geom.Rectangle(this.centerX - btnW/2, this.centerY + 130, btnW, btnH), Phaser.Geom.Rectangle.Contains);
     this.startBtnBg.on('pointerdown', () => {
       if (this.state === 'idle') this.startCountdown();
       else this.resetToHome();
     });
     this.startBtnBg.setDepth(1);
 
-    this.startBtn = this.add.text(this.centerX, this.centerY + 50 + btnH/2, '開始', {
+    this.startBtn = this.add.text(this.centerX, this.centerY + 130 + btnH/2, '開始', {
       fontSize: '36px', color: '#fff', fontFamily: 'Noto Sans TC', fontStyle: 'bold'
     }).setOrigin(0.5).setDepth(2);
     this.startBtn.setInteractive({ useHandCursor: true });
@@ -64,15 +64,15 @@ class MainScene extends Phaser.Scene {
     this.startBtn.on('pointerout', () => this.startBtn.setColor('#fff'));
 
     // 其他遊戲用文字（預設隱藏）
-    this.infoText = this.add.text(this.centerX, this.centerY + 140, '', {
+    this.infoText = this.add.text(this.centerX, this.centerY + 220, '', {
       fontSize: '36px', color: '#ff9900', fontFamily: 'Noto Sans TC'
-    }).setOrigin(0.5).setVisible(false);
+    }).setOrigin(0.5).setVisible(false).setResolution(2);
 
-    this.resultText = this.add.text(this.centerX + 20, this.centerY + 200, '', {
+    this.resultText = this.add.text(this.centerX, this.centerY + 280, '', {
       fontSize: '32px', color: '#b6e86b', fontFamily: 'Noto Sans TC'
     }).setOrigin(0.5).setVisible(false);
 
-    this.stopBtn = this.add.text(this.centerX, this.centerY + 70, '停止', {
+    this.stopBtn = this.add.text(this.centerX, this.centerY + 150, '停止', {
       fontSize: '36px', color: '#fff', backgroundColor: '#dc3545', padding: {x:24, y:12}, fontFamily: 'Noto Sans TC', borderRadius: 12
     }).setOrigin(0.5).setInteractive().setVisible(false);
     this.stopBtn.on('pointerdown', () => this.stopGame());
@@ -200,7 +200,11 @@ class MainScene extends Phaser.Scene {
       scale: 2.5,
       duration: 300,
       yoyo: true,
-      ease: 'Quad.easeOut'
+      ease: 'Quad.easeOut',
+      onUpdate: () => {
+        // 確保縮放時保持清晰度
+        this.infoText.setScale(Math.round(this.infoText.scale * 100) / 100);
+      }
     });
     this.countdownEvent = this.time.addEvent({
       delay: 1000,
@@ -216,7 +220,11 @@ class MainScene extends Phaser.Scene {
             scale: 2.5,
             duration: 300,
             yoyo: true,
-            ease: 'Quad.easeOut'
+            ease: 'Quad.easeOut',
+            onUpdate: () => {
+              // 確保縮放時保持清晰度
+              this.infoText.setScale(Math.round(this.infoText.scale * 100) / 100);
+            }
           });
         } else {
           this.infoText.setText('Start!');
@@ -228,7 +236,11 @@ class MainScene extends Phaser.Scene {
             scale: 2.5,
             duration: 300,
             yoyo: true,
-            ease: 'Quad.easeOut'
+            ease: 'Quad.easeOut',
+            onUpdate: () => {
+              // 確保縮放時保持清晰度
+              this.infoText.setScale(Math.round(this.infoText.scale * 100) / 100);
+            }
           });
           this.time.delayedCall(600, () => this.startGame());
         }
@@ -270,8 +282,10 @@ class MainScene extends Phaser.Scene {
     if (this.tictacSound) this.tictacSound.stop();
     if (this.tickSound) this.tickSound.stop();
     this.elapsed = (this.time.now - this.startTime) / 1000;
-    this.infoText.setText('結果：').setVisible(true);
-    this.resultText.setText(`你按下了 ${this.elapsed.toFixed(2)} 秒！`).setVisible(true);
+    this.infoText.setText('結果').setVisible(true);
+    // 以0.1秒為單位，1秒顯示為10
+    const displayTime = Math.floor(this.elapsed * 10);
+    this.resultText.setText(`你按下了 ${displayTime}`).setVisible(true);
     this.startBtn.setText('返回首頁').setVisible(true);
     this.startBtnBg.setVisible(true);
     this.sound.play('clap'); // 播放拍手聲效
