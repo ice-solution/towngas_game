@@ -87,7 +87,7 @@ class MainScene extends Phaser.Scene {
 
     this.stopBtn = this.add.text(this.centerX, this.scale.height - 150, '停止', {
       fontSize: '48px', color: '#fff', fontFamily: 'Noto Sans TC', fontStyle: 'bold'
-    }).setOrigin(0.5).setInteractive().setVisible(false).setDepth(2);
+    }).setOrigin(0.5).setVisible(false).setDepth(2);
     this.stopBtn.on('pointerdown', () => this.stopGame());
 
     // 彩帶群組
@@ -306,22 +306,44 @@ class MainScene extends Phaser.Scene {
     this.infoText.setVisible(false);
     this.resultText.setText(displayTime.toString()).setVisible(true);
     
-    // 將圓形按鈕改為長方形返回按鈕
-    this.startBtnBg.clear();
-    const returnBtnW = 240, returnBtnH = 80, returnBtnR = 40;
-    const returnBtnY = this.scale.height - 150;
-    this.startBtnBg.fillStyle(0xb6e86b, 1);
-    this.startBtnBg.fillRoundedRect(this.centerX - returnBtnW/2, returnBtnY, returnBtnW, returnBtnH, returnBtnR);
-    this.startBtnBg.setInteractive(new Phaser.Geom.Rectangle(this.centerX - returnBtnW/2, returnBtnY, returnBtnW, returnBtnH), Phaser.Geom.Rectangle.Contains);
-    this.startBtnBg.setVisible(true);
+    // 創建一個全新的返回按鈕，而不是重用開始按鈕
+    this.startBtnBg.setVisible(false);
+    this.startBtnBg.disableInteractive();
+    this.startBtn.setVisible(false);
+    this.startBtn.disableInteractive();
     
-    // 重新設置按鈕文字位置和互動
-    this.startBtn.setText('返回').setVisible(true);
-    this.startBtn.setPosition(this.centerX, returnBtnY + returnBtnH/2);
-    this.startBtn.setColor('#fff');
-    this.startBtn.setInteractive({ useHandCursor: true });
-    this.startBtn.off('pointerdown'); // 先移除舊的事件監聽器
-    this.startBtn.on('pointerdown', () => this.resetToHome());
+    // 創建新的返回按鈕背景
+    if (!this.returnBtnBg) {
+      this.returnBtnBg = this.add.graphics();
+    }
+    this.returnBtnBg.clear();
+    
+    const returnBtnW = 240, returnBtnH = 80, returnBtnR = 40;
+    const returnBtnY = this.centerY - 50; // 放在數字上方
+    this.returnBtnBg.fillStyle(0xb6e86b, 1);
+    this.returnBtnBg.fillRoundedRect(this.centerX - returnBtnW/2, returnBtnY, returnBtnW, returnBtnH, returnBtnR);
+    this.returnBtnBg.setInteractive(new Phaser.Geom.Rectangle(this.centerX - returnBtnW/2, returnBtnY, returnBtnW, returnBtnH), Phaser.Geom.Rectangle.Contains);
+    this.returnBtnBg.setVisible(true);
+    this.returnBtnBg.setDepth(1);
+    
+    // 創建新的返回按鈕文字
+    if (!this.returnBtn) {
+      this.returnBtn = this.add.text(this.centerX, returnBtnY + returnBtnH/2, '返回', {
+        fontSize: '48px', color: '#fff', fontFamily: 'Noto Sans TC', fontStyle: 'bold'
+      }).setOrigin(0.5).setDepth(2);
+    } else {
+      this.returnBtn.setText('返回');
+      this.returnBtn.setPosition(this.centerX, returnBtnY + returnBtnH/2);
+      this.returnBtn.setColor('#fff');
+    }
+    this.returnBtn.setVisible(true);
+    
+    // 綁定返回按鈕事件
+    this.returnBtnBg.off('pointerdown');
+    this.returnBtnBg.on('pointerdown', () => {
+      console.log('返回按鈕被點擊');
+      this.resetToHome();
+    });
     this.sound.play('clap'); // 播放拍手聲效
     this.launchConfetti();
     this.state = 'finished'; // 改為 'finished' 而不是 'idle'
@@ -341,8 +363,18 @@ class MainScene extends Phaser.Scene {
     console.log('=== resetToHome 被調用 ===');
     console.log('調用前狀態:', this.state);
     
+    // 隱藏返回按鈕
+    if (this.returnBtnBg) {
+      this.returnBtnBg.setVisible(false);
+      this.returnBtnBg.disableInteractive();
+    }
+    if (this.returnBtn) {
+      this.returnBtn.setVisible(false);
+    }
+    
     // 恢復圓形開始按鈕
     this.startBtnBg.clear();
+    this.startBtnBg.disableInteractive(); // 先禁用舊的互動區域
     this.startBtnBg.fillStyle(0xb6e86b, 1);
     const btnRadius = 120; // 定義按鈕半徑
     this.startBtnBg.fillCircle(this.centerX, this.scale.height - 150, btnRadius);
@@ -386,70 +418,4 @@ const config = {
 
 new Phaser.Game(config);
 
-// 等待遊戲初始化完成後再設置監控
-setTimeout(() => {
-    // 嘗試多種方式獲取遊戲實例
-    let game = null;
-    
-    // 方法1: 從 window 物件獲取
-    if (window.game) {
-        game = window.game;
-    }
-    // 方法2: 從 canvas 元素獲取
-    else if (document.querySelector('canvas')) {
-        const canvas = document.querySelector('canvas');
-        if (canvas.__phaser) {
-            game = canvas.__phaser;
-        }
-    }
-    // 方法3: 從 Phaser 全域變數獲取
-    else if (window.Phaser && window.Phaser.Game) {
-        // 嘗試獲取最後創建的遊戲實例
-        const games = window.Phaser.Game.instances;
-        if (games && games.length > 0) {
-            game = games[games.length - 1];
-        }
-    }
-    
-    if (game && game.scene && game.scene.scenes[0]) {
-        const scene = game.scene.scenes[0];
-        console.log('成功獲取遊戲實例');
-        console.log('場景狀態:', scene.state);
-        
-        // 監控遊戲狀態變化
-        const originalResetToHome = scene.resetToHome;
-        scene.resetToHome = function() {
-            console.log('resetToHome 被調用了');
-            console.log('當前狀態:', this.state);
-            console.log('按鈕文字:', this.startBtn.text);
-            return originalResetToHome.call(this);
-        };
-
-        // 監控按鈕點擊
-        if (scene.startBtn && scene.startBtn.listeners) {
-            const listeners = scene.startBtn.listeners('pointerdown');
-            if (listeners.length > 0) {
-                const originalStartBtnOnPointerDown = listeners[0];
-                scene.startBtn.off('pointerdown');
-                scene.startBtn.on('pointerdown', function() {
-                    console.log('按鈕被點擊了');
-                    console.log('當前狀態:', scene.state);
-                    console.log('按鈕文字:', scene.startBtn.text);
-                    originalStartBtnOnPointerDown.call(this);
-                });
-            }
-        }
-        
-        console.log('Debug 監控已設置完成');
-    } else {
-        console.log('無法獲取遊戲實例，嘗試手動設置...');
-        // 手動設置監控
-        const scene = window.MainScene || document.querySelector('canvas')?.__phaser?.scene?.scenes[0];
-        if (scene) {
-            console.log('通過手動方式獲取場景');
-            // 這裡可以設置監控
-        } else {
-            console.log('完全無法獲取遊戲實例');
-        }
-    }
-}, 1000); 
+ 
